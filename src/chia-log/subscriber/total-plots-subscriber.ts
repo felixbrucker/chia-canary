@@ -42,7 +42,7 @@ export class TotalPlotsSubscriber implements ChiaLogSubscriber {
         to: totalPlots,
       });
     } else if (this.state === State.degraded && totalPlots >= this.topmostLastTotalPlots) {
-      while (totalPlots >= this.topmostLastTotalPlots) {
+      while (totalPlots >= this.topmostLastTotalPlots && this.pastTotalPlotsStack.length > 0) {
         this.pastTotalPlotsStack.pop();
       }
       this.emitter.emit('change', {
