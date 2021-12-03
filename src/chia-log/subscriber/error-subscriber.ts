@@ -15,6 +15,8 @@ export class ErrorSubscriber implements ChiaLogSubscriber {
 
   private readonly blacklist = [
     'Failed to fetch block',
+    'Proof of space has required iters',
+    'Partial not good enough',
   ];
 
   public subscribeTo(observer: ChiaLogObserver): void {
