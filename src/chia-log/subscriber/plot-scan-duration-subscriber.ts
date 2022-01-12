@@ -12,18 +12,19 @@ export type PlotScanDurationStateChangedEvent = {
 export class PlotScanDurationSubscriber implements ChiaLogSubscriber {
   private readonly regex = /Found ([0-9]*) proofs. Time: ([0-9.]*) s/;
   private readonly emitter = new EventEmitter();
-  private lastPlotScanDuration = 0;
+  private state: State = State.normal;
+  private lastPlotScanDurations: number[] = [0];
 
   public subscribeTo(observer: ChiaLogObserver): void {
     observer.onLogLine(this.handleLogLine.bind(this));
   }
 
-  public get state(): State {
-    return this.lastPlotScanDuration >= 25 ? State.degraded : State.normal;
-  }
-
   public onChange(cb: (event: PlotScanDurationStateChangedEvent) => void): void {
     this.emitter.on('change', cb);
+  }
+
+  private get lastPlotScanDuration(): number {
+    return this.lastPlotScanDurations[this.lastPlotScanDurations.length - 1];
   }
 
   private handleLogLine(line: string): void {
@@ -34,13 +35,31 @@ export class PlotScanDurationSubscriber implements ChiaLogSubscriber {
 
     const lastPlotScanDuration = this.lastPlotScanDuration;
     const previousState = this.state;
-    this.lastPlotScanDuration = parseFloat(matches[2]);
-    if (this.state !== previousState) {
+    this.recordPlotScanDuration(parseFloat(matches[2]));
+    const newState = this.determineState();
+    if (previousState !== newState) {
+      this.state = newState;
       this.emitter.emit('change', {
         state: this.state,
         from: lastPlotScanDuration,
         to: this.lastPlotScanDuration,
       });
     }
+  }
+
+  private recordPlotScanDuration(lastPlotScanDuration: number) {
+    this.lastPlotScanDurations.push(lastPlotScanDuration);
+    this.lastPlotScanDurations = this.lastPlotScanDurations.slice(-3);
+  }
+
+  private determineState(): State {
+    if (this.lastPlotScanDurations.every(lastPlotScanDuration => lastPlotScanDuration >= 25)) {
+      return State.degraded;
+    }
+    if (this.lastPlotScanDurations.every(lastPlotScanDuration => lastPlotScanDuration < 25)) {
+      return State.normal;
+    }
+
+    return this.state;
   }
 }
