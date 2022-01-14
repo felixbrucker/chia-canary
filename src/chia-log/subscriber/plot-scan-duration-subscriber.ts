@@ -23,8 +23,8 @@ export class PlotScanDurationSubscriber implements ChiaLogSubscriber {
     this.emitter.on('change', cb);
   }
 
-  private get lastPlotScanDuration(): number {
-    return this.lastPlotScanDurations[this.lastPlotScanDurations.length - 1];
+  private get firstPlotScanDuration(): number {
+    return this.lastPlotScanDurations[0];
   }
 
   private handleLogLine(line: string): void {
@@ -33,7 +33,7 @@ export class PlotScanDurationSubscriber implements ChiaLogSubscriber {
       return;
     }
 
-    const lastPlotScanDuration = this.lastPlotScanDuration;
+    const firstPlotScanDuration = this.firstPlotScanDuration;
     const previousState = this.state;
     this.recordPlotScanDuration(parseFloat(matches[2]));
     const newState = this.determineState();
@@ -41,8 +41,8 @@ export class PlotScanDurationSubscriber implements ChiaLogSubscriber {
       this.state = newState;
       this.emitter.emit('change', {
         state: this.state,
-        from: lastPlotScanDuration,
-        to: this.lastPlotScanDuration,
+        from: firstPlotScanDuration,
+        to: this.firstPlotScanDuration,
       });
     }
   }
