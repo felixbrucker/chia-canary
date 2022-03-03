@@ -60,7 +60,7 @@ process.on('uncaughtException', (err: Error) => defaultLogger.error(err));
       new TotalPlotsSubscriber(),
       new SignagePointSubscriber(),
       new PlotScanDurationSubscriber(),
-      new ErrorSubscriber()
+      new ErrorSubscriber(config.errorLogBlacklist)
     );
   }
 })();

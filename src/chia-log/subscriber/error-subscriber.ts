@@ -19,6 +19,10 @@ export class ErrorSubscriber implements ChiaLogSubscriber {
     'Partial not good enough',
   ];
 
+  public constructor(blacklist: string[]) {
+    this.blacklist.concat(blacklist);
+  }
+
   public subscribeTo(observer: ChiaLogObserver): void {
     observer.onLogLine(this.handleLogLine.bind(this));
   }

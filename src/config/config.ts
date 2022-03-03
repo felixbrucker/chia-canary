@@ -5,6 +5,7 @@ export class Config {
   public discordBotToken: string;
   public discordNotificationUserId: string;
   public machineName: string;
+  public errorLogBlacklist: string[];
 
   private readonly configPath = 'config.yaml';
 
@@ -15,6 +16,7 @@ export class Config {
     this.discordBotToken = config.discordBotToken;
     this.discordNotificationUserId = config.discordNotificationUserId;
     this.machineName = config.machineName;
+    this.errorLogBlacklist = config.errorLogBlacklist || [];
   }
 
   public async save(): Promise<void> {
@@ -22,6 +24,7 @@ export class Config {
       discordBotToken: this.discordBotToken || '',
       discordNotificationUserId: this.discordNotificationUserId || '',
       machineName: this.machineName,
+      errorLogBlacklist: this.errorLogBlacklist || [],
     }, { lineWidth: 140 });
     await writeFile(this.configPath, yaml, 'utf8');
   }
