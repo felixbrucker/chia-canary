@@ -20,7 +20,7 @@ export class ErrorSubscriber implements ChiaLogSubscriber {
   ];
 
   public constructor(blacklist: string[]) {
-    this.blacklist.concat(blacklist);
+    this.blacklist = this.blacklist.concat(blacklist);
   }
 
   public subscribeTo(observer: ChiaLogObserver): void {
