@@ -9,7 +9,9 @@ export type LogFile = {
 }
 
 export class ChiaLogFileDetector {
-  async detect(): Promise<LogFile[]> {
+  public constructor(private readonly coinBlacklist: string[]) {}
+
+  public async detect(): Promise<LogFile[]> {
     const possibleDirectoryNames = await this.getPossibleDirectoryNames();
     const possibleLogFiles = possibleDirectoryNames.map(directoryName => {
       const name = directoryName.replace('.', '');
@@ -32,13 +34,14 @@ export class ChiaLogFileDetector {
 
     return populatedLogFiles
       .filter(logFile => logFile.accessible)
+      .filter(logFile => this.coinBlacklist.indexOf(logFile.name.toLowerCase()) === -1)
       .map(logFile => ({
         path: logFile.path,
         name: logFile.name,
       }));
   }
 
-  async getPossibleDirectoryNames(): Promise<string[]> {
+  private async getPossibleDirectoryNames(): Promise<string[]> {
     const directoryEntries = await readdir(this.baseDirectory, { withFileTypes: true });
 
     return directoryEntries

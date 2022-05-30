@@ -25,7 +25,7 @@ process.on('uncaughtException', (err: Error) => defaultLogger.error(err));
   }
   await config.load();
 
-  const logFileDetector = new ChiaLogFileDetector();
+  const logFileDetector = new ChiaLogFileDetector(config.coinBlacklist);
   const logFiles = await logFileDetector.detect();
 
   if (logFiles.length === 0) {
