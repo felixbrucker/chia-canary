@@ -1,4 +1,4 @@
-import {ChiaLogObserver} from '../chia-log-observer';
+import {ChiaLogObserver} from '../chia-log-observer'
 
 export interface ChiaLogSubscriber {
   subscribeTo(observer: ChiaLogObserver): void
