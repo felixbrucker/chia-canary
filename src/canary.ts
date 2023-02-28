@@ -1,34 +1,54 @@
-import {ChiaLogSubscriber} from './chia-log/subscriber/chia-log-subscriber'
 import {ChiaLogObserver} from './chia-log/chia-log-observer'
-import {Sink} from './sink/sink'
+import {makeErrorEventObservable} from './chia-log/stream-factory/error-event-factory'
+import {
+  makePlotScanDurationStateChangedEventObservable
+} from './chia-log/stream-factory/plot-scan-duration-state-changed-event-factory'
+import {makeTotalPlotsChangedEventObservable} from './chia-log/stream-factory/total-plots-changed-event-factory'
+import {Config} from './config/config'
+import {Logger} from './subscriber/logger'
+import {LogFile} from './chia-log/chia-log-file-detector'
+import {Discord} from './subscriber/discord'
+import {hostname} from 'os'
+import {Client} from 'discord.js'
+import {makeDriveErrorEventObservable} from './chia-log/stream-factory/drive-error-event-factory'
+import {Subscriber} from './subscriber/subscriber'
 
 export class Canary {
-  public static makeForLogFile(logFilePath: string): Canary {
-    const chiaLogObserver = ChiaLogObserver.makeForLogFile(logFilePath)
+  public static makeForLogFile(logFile: LogFile, config: Config, client: Client|undefined): Canary {
+    const chiaLogObserver = ChiaLogObserver.makeForLogFile(logFile.path)
+    const errorEvents = makeErrorEventObservable(chiaLogObserver.logLines, config.errorLogBlacklist)
+    const plotScanDurationStateChangedEvents = makePlotScanDurationStateChangedEventObservable(chiaLogObserver.logLines)
+    const totalPlotsChangedEvents = makeTotalPlotsChangedEventObservable(chiaLogObserver.logLines)
+    const driveErrorEvents = makeDriveErrorEventObservable(chiaLogObserver.logLines)
 
-    return new Canary(chiaLogObserver)
+    const consumer: Subscriber[] = [
+      new Logger(
+        logFile.name,
+        errorEvents,
+        plotScanDurationStateChangedEvents,
+        totalPlotsChangedEvents,
+        driveErrorEvents,
+      ),
+    ]
+    if (client !== undefined && config.discordNotificationUserId) {
+      consumer.push(new Discord(
+        client,
+        config.discordNotificationUserId,
+        logFile.name,
+        config.machineName || hostname(),
+        errorEvents,
+        plotScanDurationStateChangedEvents,
+        totalPlotsChangedEvents,
+        driveErrorEvents,
+      ))
+    }
+
+    return new Canary(consumer)
   }
 
-  private readonly logObserver: ChiaLogObserver
-  private readonly subscriber: ChiaLogSubscriber[] = []
-  private readonly sinks: Sink[] = []
+  private constructor(private readonly consumer: Subscriber[]) {}
 
-  private constructor(logObserver) {
-    this.logObserver = logObserver
-  }
-
-  public addChiaLogSubscriber(...subscribers: ChiaLogSubscriber[]): void {
-    subscribers.forEach(subscriber => {
-      subscriber.subscribeTo(this.logObserver)
-      this.sinks.forEach(sink => sink.subscribeTo(subscriber))
-      this.subscriber.push(subscriber)
-    })
-  }
-
-  public addSink(...sinks: Sink[]): void {
-    sinks.forEach(sink => {
-      this.subscriber.forEach(subscriber => sink.subscribeTo(subscriber))
-      this.sinks.push(sink)
-    })
+  public shutdown() {
+    this.consumer.forEach(consumer => consumer.shutdown())
   }
 }
