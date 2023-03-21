@@ -12,7 +12,7 @@ interface PlotFileError {
 }
 
 const regex = /^File: (.+)[\/\\](plot.*\.plot).*$/
-const plotFileErrorThreshold = 2
+const plotFileErrorThreshold = 3
 
 export const makeDriveErrorEventObservable = (logLines: Observable<LogLine>): Observable<DriveErrorEvent> => {
   const drivesWithErrors: TtlCache = new TtlCache(5 * 60)
